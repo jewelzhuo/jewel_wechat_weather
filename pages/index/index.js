@@ -48,7 +48,19 @@ Page({
     this.qqmapsdk = new QQMapWX({
       key: 'I77BZ-GZP3O-D77WO-S2F4Q-YAJXE-QZBQ6'
     });
-    this.getNow();
+    wx.getSetting({
+      success: function(res) {
+        let auth = res.authSetting['scope.userLocation'];
+        this.setData({
+          locationAuthType = auth ? AUTHORIZED : (auth === false) ? UNAUTHORIZED : UNPROMPTED,
+          locationTipsText = auth ? AUTHORIZED_TIPS : (auth === false) ? UNAUTHORIZED_TIPS : UNPROMPTED_TIPS,
+        })
+        if(auth)
+          this.getCityAndWeather()
+        else
+          this.getNow()
+      },
+    });
   },
   getNow(callback){
     var that = this;
@@ -113,11 +125,17 @@ Page({
   onTapLocation(){
     var that = this;
     if (that.data.locationAuthType === UNAUTHORIZED)
-      wx.openSetting()
+      wx.openSetting({
+        success: function(res){
+          let auth = res.authSetting['scope.userLocation'];
+          if(auth)
+            that.getCityAndWeather()
+        }
+      })
     else
-      that.getLocation()
+      that.getCityAndWeather()
   },
-  getLocation(){
+  getCityAndWeather(){
     wx.getLocation({
       success: function(res){
         that.setData({
@@ -141,7 +159,7 @@ Page({
       },
       fail: function(){
         that.setData({
-          locationAuthType: UNAUTHORIZED,
+          locationAuthType: UNAUTHORIZED, 
           locationTipsText: UNAUTHORIZED_TIPS
         })
       }
